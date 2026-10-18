@@ -1,0 +1,9 @@
+# .github/metadata.yaml
+description: "A tools-only Model Context Protocol server: answers JSON-RPC lines with registered tools."
+topics:
+  - model-context-protocol
+  - mcp
+  - server
+homepage: "https://swift-institute.org"
+readme:
+  family: E
