@@ -1,58 +1,13 @@
 # swift-mcp
 
-![Development Status](https://img.shields.io/badge/status-active--development-blue.svg)
-[![CI](https://github.com/swift-compositions/swift-mcp/workflows/CI/badge.svg)](https://github.com/swift-compositions/swift-mcp/actions/workflows/ci.yml)
+Use this package when you want to expose tools to a model through a Model Context Protocol server over stdio. Start from `MCP.Server` with a list of `MCP.Server.Tool` values, and feed each line you read to `MCP.Server.respond(to:)`. Reading and writing the stream is left to you. If you only need the protocol's message types, use swift-model-context-protocol, and for JSON-RPC alone, swift-json-rpc-standard.
 
-A tools-only Model Context Protocol server for Swift.
+## Laws
 
-## Overview
-
-`MCP.Server` answers one JSON-RPC message at a time, as the MCP stdio transport carries them: `initialize` (agreeing on a revision), `ping`, `tools/list` and `tools/call`. Notifications and responses get no answer. Each `MCP.Server.Tool` pairs an `MCP.Tool` definition with the code that runs it; a failing tool returns `MCP.Tool.Call.Result.failure(_:)`, which the model sees as a tool error rather than a protocol error.
-
-The message types come from [swift-model-context-protocol](https://github.com/swift-linux-foundation/swift-model-context-protocol) and [swift-json-rpc-standard](https://github.com/swift-standards/swift-json-rpc-standard), both re-exported. JSON text is read and written with [swift-json](https://github.com/swift-compositions/swift-json).
-
-## Products
-
-- `MCP Server` (module `MCP_Server`).
-
-## Installation
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/swift-compositions/swift-mcp.git", branch: "main")
-]
-```
-
-```swift
-.target(
-    name: "YourTarget",
-    dependencies: [
-        .product(name: "MCP Server", package: "swift-mcp"),
-    ]
-)
-```
-
-## Quick Start
-
-```swift
-import JSON
-import MCP_Server
-
-let server = MCP.Server(
-    name: "echo",
-    version: "1.0.0",
-    tools: [
-        MCP.Server.Tool(name: "echo", description: "Echoes its text.", input: .object([("type", "object")]), isReadOnly: true) { arguments in
-            MCP.Tool.Call.Result(value: .object([("said", arguments["text"])]))
-        },
-    ]
-)
-
-while let line = readLine() {
-    if let response = await server.respond(to: line) { print(response) }
-}
-```
-
-## License
-
-Apache 2.0. See [LICENSE.md](LICENSE.md).
+- `MCP.Server.respond(to:)` takes one message and returns one line of JSON with no newline in it, or nil when no answer is due. Notifications, and responses to requests the server never sent, get nil. A message whose id is null is a request and is answered.
+- The server answers `initialize`, `ping`, `tools/list` and `tools/call`, and advertises only the tools capability. Any other method is answered with method not found (-32601).
+- On `initialize` the server agrees to the client's protocol version if it is one of its `versions`, and otherwise offers the first of them, which by default is the newest.
+- Text that isn't JSON gets a parse error (-32700) with a null id. JSON that isn't a request object, such as a batch array, gets an invalid request error (-32600). A call to a tool that doesn't exist gets invalid params (-32602).
+- Tools are found by name, and the first with that name wins. A tool that fails returns `MCP.Tool.Call.Result.failure(_:)`, which reaches the model as a tool result marked as an error, not as a protocol error.
+- A tool result built from JSON carries the value twice: as structured content, and as its serialized text in a single text block.
+- A tool made with `MCP.Server.Tool.init(name:description:input:isReadOnly:call:)` is always marked as neither destructive nor open world.
