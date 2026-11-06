@@ -24,6 +24,8 @@ extension MCP {
 extension MCP.Server {
     public init(
         name: String,
+        // swift-linter:disable:next raw concept
+        // REASON: MCP Implementation.version is a free string in the protocol (Version.Semantic and Version.Tools refuse what servers may send); MCP.Implementation holds it raw for the same reason.
         version: String,
         instructions: String? = nil,
         tools: [MCP.Server.Tool]
