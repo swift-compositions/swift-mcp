@@ -1,6 +1,6 @@
-public import Model_Context_Protocol
 import JSON
 import JSON_RPC_Standard
+public import Model_Context_Protocol
 import RFC_8259
 
 extension MCP {
