@@ -126,4 +126,36 @@ struct `MCP.Server Tests` {
         let response = try await Self.respond(#"{"jsonrpc":"2.0","id":8,"method":"ping"}"#)
         #expect(response.result.object?.isEmpty == true)
     }
+
+    @Test
+    func `an unknown version gets the newest one whatever the order of versions`() async throws {
+        let server = MCP.Server(
+            info: MCP.Implementation(name: "test", version: "1.0.0"),
+            tools: [],
+            versions: ["2024-11-05", "2025-06-18", "2025-03-26"]
+        )
+        let line = try #require(
+            await server.respond(
+                to: #"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"1999-01-01"}}"#
+            )
+        )
+        let response = try JSON.parse(line)
+        #expect(String(response.result.protocolVersion) == "2025-06-18")
+    }
+
+    @Test
+    func `a server with no versions answers initialize with an internal error`() async throws {
+        let server = MCP.Server(
+            info: MCP.Implementation(name: "test", version: "1.0.0"),
+            tools: [],
+            versions: []
+        )
+        let line = try #require(
+            await server.respond(
+                to: #"{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}"#
+            )
+        )
+        let response = try JSON.parse(line)
+        #expect(Int(response.error.code) == -32603)
+    }
 }

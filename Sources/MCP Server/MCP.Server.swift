@@ -8,6 +8,9 @@ extension MCP {
         public var info: MCP.Implementation
         public var instructions: String?
         public var tools: [MCP.Server.Tool]
+        /// The protocol versions this server speaks, in any order. On `initialize` a client asking for another
+        /// version gets the newest of these (MCP versions are `YYYY-MM-DD` dates, so the greatest is the newest);
+        /// an empty list answers `initialize` with an internal error.
         public var versions: [MCP.Version]
 
         public init(
@@ -75,8 +78,11 @@ extension MCP.Server {
         switch MCP.Method(rawValue: request.method) {
         case .initialize:
             let requested = try MCP.Initialize.Parameters(request.params).protocolVersion
+            guard let newest = versions.max(by: { $0.rawValue < $1.rawValue }) else {
+                throw JSON_RPC.Error(code: .internalError, message: "Server supports no protocol version")
+            }
             return MCP.Initialize.Result(
-                protocolVersion: versions.contains(requested) ? requested : versions[0],
+                protocolVersion: versions.contains(requested) ? requested : newest,
                 capabilities: MCP.Capabilities(tools: MCP.Capabilities.Tools()),
                 serverInfo: info,
                 instructions: instructions
