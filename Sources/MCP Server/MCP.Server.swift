@@ -78,7 +78,7 @@ extension MCP.Server {
         switch MCP.Method(rawValue: request.method) {
         case .initialize:
             let requested = try MCP.Initialize.Parameters(request.params).protocolVersion
-            guard let newest = versions.max(by: { $0.rawValue < $1.rawValue }) else {
+            guard let newest = versions.max() else {
                 throw JSON_RPC.Error(code: .internalError, message: "Server supports no protocol version")
             }
             return MCP.Initialize.Result(
