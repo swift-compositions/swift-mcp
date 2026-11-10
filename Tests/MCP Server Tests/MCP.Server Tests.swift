@@ -81,6 +81,16 @@ struct `MCP.Server Tests` {
     }
 
     @Test
+    func `a result made pretty carries its text pretty-printed and the same structured content`() throws {
+        let value: JSON = .object([("said", "hi")])
+        let pretty = MCP.Tool.Call.Result(value: value, layout: .pretty)
+        let compact = MCP.Tool.Call.Result(value: value)
+        #expect(pretty.structuredContent == compact.structuredContent)
+        #expect(pretty.content != compact.content)
+        #expect(pretty.content == [.text(value.serialize(pretty: true))])
+    }
+
+    @Test
     func `a failing tool reports a tool error, not a protocol error`() async throws {
         let response = try await Self.respond(
             #"{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"fail"}}"#

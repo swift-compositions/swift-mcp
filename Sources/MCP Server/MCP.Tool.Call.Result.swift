@@ -3,9 +3,9 @@ public import Model_Context_Protocol
 import RFC_8259
 
 extension MCP.Tool.Call.Result {
-    public init(value: JSON, isError: Bool = false) {
+    public init(value: JSON, isError: Bool = false, layout: Layout = .compact) {
         self.init(
-            content: [.text(value.serialize())],
+            content: [.text(value.serialize(pretty: layout == .pretty))],
             structuredContent: RFC_8259.Value(value),
             isError: isError
         )
