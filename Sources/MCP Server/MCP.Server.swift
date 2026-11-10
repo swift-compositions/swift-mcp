@@ -77,7 +77,7 @@ extension MCP.Server {
     func answer(_ request: JSON_RPC.Request) async throws(JSON_RPC.Error) -> RFC_8259.Value {
         switch MCP.Method(rawValue: request.method) {
         case .initialize:
-            let requested = try MCP.Initialize.Parameters(request.params).protocolVersion
+            let requested = try MCP.Initialize.Parameters(request.params?.value).protocolVersion
             guard let newest = versions.max() else {
                 throw JSON_RPC.Error(code: .internalError, message: "Server supports no protocol version")
             }
@@ -92,7 +92,7 @@ extension MCP.Server {
         case .toolsList:
             return MCP.Tool.List.Result(tools: tools.map(\.definition)).value
         case .toolsCall:
-            let call = try MCP.Tool.Call(request.params)
+            let call = try MCP.Tool.Call(request.params?.value)
             guard let tool = tools.first(where: { $0.definition.name == call.name }) else {
                 throw JSON_RPC.Error(code: .invalidParams, message: "Unknown tool: \(call.name)")
             }
